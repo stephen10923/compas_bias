@@ -1,0 +1,2 @@
+disparate_impact,stat_parity_diff,equal_opp_diff,avg_odds_diff,fpr_ratio,aa_fpr,ca_fpr,fpr_diff_pp
+2.143,0.282,0.331,0.242,1.906,0.324,0.17,15.4

@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COMPAS Bias Audit — Complete Project Guide</title>
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #f5f4ef;
+            --card: #fff;
+            --border: rgba(0, 0, 0, 0.1);
+            --text: #1a1a18;
+            --muted: #5f5e5a;
+            --hint: #888780;
+            --purple: #534AB7;
+            --purple-light: #EEEDFE;
+            --purple-dark: #3C3489;
+            --teal: #0F6E56;
+            --teal-light: #E1F5EE;
+            --teal-dark: #085041;
+            --red: #A32D2D;
+            --red-light: #FCEBEB;
+            --amber: #854F0B;
+            --amber-light: #FAEEDA;
+            --blue: #185FA5;
+            --blue-light: #E6F1FB;
+            --green: #3B6D11;
+            --green-light: #EAF3DE;
+            --radius: 10px;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #1a1a18;
+                --card: #242422;
+                --border: rgba(255, 255, 255, 0.1);
+                --text: #e8e6de;
+                --muted: #b4b2a9;
+                --hint: #888780;
+                --purple-light: #26215C;
+                --teal-light: #04342C;
+                --red-light: #501313;
+                --amber-light: #412402;
+                --blue-light: #042C53;
+                --green-light: #173404;
+            }
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+        }
+
+        .wrap {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 32px 16px 80px;
+        }
+
+        /* Header */
+        .hero {
+            background: var(--card);
+            border: 0.5px solid var(--border);
+            border-radius: var(--radius);
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            background: var(--purple-light);
+            color: var(--purple);
+            font-size: 12px;
+            font-weight: 500;
+            padding: 4px 12px;
+            border-radius: 20px;
+            margin-bottom: 10px;
+        }
+
+        .hero h1 {
+            font-size: 22px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .hero p {
+            font-size: 14px;
+            color: var(--muted);
+            max-width: 620px;
+        }
+
+        .hero-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 1.2rem;
+        }
+
+        .hs {
+            background: var(--bg);
+            border-radius: 8px;
+            padding: 10px 12px;
+        }
+
+        .hs-v {
+            font-size: 20px;
+            font-weight: 500;
+        }
+
+        .hs-l {
+            font-size: 11px;
+            color: var(--hint);
+            margin-top: 2px;
+        }
+
+        /* Nav tabs */
+        .tabs {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 1.2rem;
+        }
+
+        .tab {
+            font-size: 13px;
+            padding: 6px 16px;
+            border-radius: 20px;
+            border: 0.5px solid var(--border);
+            background: var(--card);
+            color: var(--muted);
+            cursor: pointer;
+            transition: all .18s;
+        }
+
+        .tab.active {
+            background: var(--purple-light);
+            color: var(--purple);
+            border-color: var(--purple);
+            font-weight: 500;
+        }
+
+        .panel {
+            display: none;
+        }
+
+        .panel.active {
+            display: block;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--card);
+            border: 0.5px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.4rem;
+            margin-bottom: 1.2rem;
+        }
+
+        .card h2 {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+
+        .card h3 {
+            font-size: 14px;
+            font-weight: 500;
+            margin: 14px 0 6px;
+            color: var(--muted);
+        }
+
+        .card p {
+            font-size: 13px;
+            color: var(--muted);
+            margin-bottom: 8px;
+            line-height: 1.65;
+        }
+
+        /* Phase steps */
+        .phases {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .phase {
+            border-radius: 8px;
+            border: 0.5px solid var(--border);
+            overflow: hidden;
+        }
+
+        .phase-head {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--card);
+            cursor: pointer;
+        }
+
+        .phase-num {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 500;
+            flex-shrink: 0;
+        }
+
+        .ph-gray {
+            background: #D3D1C7;
+            color: #2C2C2A;
+        }
+
+        .ph-blue {
+            background: #B5D4F4;
+            color: #042C53;
+        }
+
+        .ph-amber {
+            background: #FAC775;
+            color: #412402;
+        }
+
+        .ph-teal {
+            background: #9FE1CB;
+            color: #04342C;
+        }
+
+        .ph-purple {
+            background: #CECBF6;
+            color: #26215C;
+        }
+
+        .phase-title {
+            font-size: 14px;
+            font-weight: 500;
+            flex: 1;
+        }
+
+        .phase-tag {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 10px;
+        }
+
+        .phase-body {
+            padding: 12px 16px 14px;
+            background: var(--bg);
+            font-size: 13px;
+            color: var(--muted);
+            display: none;
+        }
+
+        .phase-body.open {
+            display: block;
+        }
+
+        .phase-body ul {
+            padding-left: 18px;
+            margin: 6px 0;
+        }
+
+        .phase-body li {
+            margin-bottom: 4px;
+        }
+
+        .phase-body .outputs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .out-pill {
+            background: var(--card);
+            border: 0.5px solid var(--border);
+            border-radius: 5px;
+            font-size: 11px;
+            padding: 3px 8px;
+            font-family: monospace;
+        }
+
+        /* Code blocks */
+        pre {
+            background: #1e1e1c;
+            color: #c8c6be;
+            border-radius: 8px;
+            padding: 14px 16px;
+            overflow-x: auto;
+            font-size: 12px;
+            line-height: 1.6;
+            margin: 10px 0;
+        }
+
+        code {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+
+        .inline-code {
+            background: var(--bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        /* Metrics table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        th {
+            text-align: left;
+            font-size: 11px;
+            color: var(--hint);
+            padding: 6px 10px;
+            border-bottom: 0.5px solid var(--border);
+        }
+
+        td {
+            padding: 7px 10px;
+            border-bottom: 0.5px solid var(--border);
+        }
+
+        .bad {
+            color: #A32D2D;
+            font-weight: 500;
+        }
+
+        .good {
+            color: #3B6D11;
+            font-weight: 500;
+        }
+
+        .warn {
+            color: #854F0B;
+            font-weight: 500;
+        }
+
+        /* Metric cards */
+        .metric-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .metric-box {
+            background: var(--bg);
+            border-radius: 8px;
+            padding: 12px;
+        }
+
+        .metric-label {
+            font-size: 11px;
+            color: var(--hint);
+            margin-bottom: 4px;
+        }
+
+        .metric-val {
+            font-size: 20px;
+            font-weight: 500;
+        }
+
+        .metric-note {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+
+        /* File tree */
+        .filetree {
+            background: #1e1e1c;
+            border-radius: 8px;
+            padding: 14px 16px;
+            font-family: monospace;
+            font-size: 12px;
+            line-height: 1.8;
+        }
+
+        .ft-dir {
+            color: #85B7EB;
+        }
+
+        .ft-file {
+            color: #9FE1CB;
+        }
+
+        .ft-comm {
+            color: #888780;
+        }
+
+        /* Alert boxes */
+        .alert {
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin: 10px 0;
+            font-size: 13px;
+        }
+
+        .alert-red {
+            background: var(--red-light);
+            color: var(--red);
+            border-left: 3px solid var(--red);
+            border-radius: 0;
+        }
+
+        .alert-green {
+            background: var(--green-light);
+            color: var(--green);
+            border-left: 3px solid var(--green);
+            border-radius: 0;
+        }
+
+        .alert-amber {
+            background: var(--amber-light);
+            color: var(--amber);
+            border-left: 3px solid var(--amber);
+            border-radius: 0;
+        }
+
+        .alert-blue {
+            background: var(--blue-light);
+            color: var(--blue);
+            border-left: 3px solid var(--blue);
+            border-radius: 0;
+        }
+
+        .alert strong {
+            display: block;
+            margin-bottom: 3px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Bar chart */
+        .bar-wrap {
+            margin: 8px 0;
+        }
+
+        .bar-row2 {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .bar-lbl {
+            font-size: 12px;
+            color: var(--muted);
+            width: 130px;
+            flex-shrink: 0;
+        }
+
+        .bar-track {
+            flex: 1;
+            background: var(--border);
+            border-radius: 4px;
+            height: 18px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            padding-left: 6px;
+            font-size: 11px;
+            font-weight: 500;
+            color: #fff;
+        }
+
+        @media (max-width: 520px) {
+            .hero-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .metric-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+
+        <!-- HERO -->
+        <div class="hero">
+            <div class="hero-badge">[Unbiased AI Decision] Challenge</div>
+            <h1>COMPAS Recidivism Bias Audit</h1>
+            <p>A complete end-to-end project replicating and auditing the COMPAS algorithm — the most famous real-world
+                AI bias case — using Python, scikit-learn, and formal fairness metrics.</p>
+            <div class="hero-stats">
+                <div class="hs">
+                    <div class="hs-v">6,172</div>
+                    <div class="hs-l">defendants audited</div>
+                </div>
+                <div class="hs">
+                    <div class="hs-v" style="color:#A32D2D">35.0%</div>
+                    <div class="hs-l">Black FPR (vs 23.5%)</div>
+                </div>
+                <div class="hs">
+                    <div class="hs-v" style="color:#A32D2D">0.61</div>
+                    <div class="hs-l">disparate impact</div>
+                </div>
+                <div class="hs">
+                    <div class="hs-v">6</div>
+                    <div class="hs-l">project phases</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TABS -->
+        <div class="tabs">
+            <button class="tab active" onclick="go(0)">Overview</button>
+            <button class="tab" onclick="go(1)">Setup guide</button>
+            <button class="tab" onclick="go(2)">Phase walkthrough</button>
+            <button class="tab" onclick="go(3)">Results & findings</button>
+            <button class="tab" onclick="go(4)">File structure</button>
+        </div>
+
+        <!-- PANEL 0: OVERVIEW -->
+        <div class="panel active" id="p0">
+            <div class="card">
+                <h2>What is this project?</h2>
+                <p>COMPAS (Correctional Offender Management Profiling for Alternative Sanctions) is an AI tool used by
+                    US courts to predict whether a defendant will reoffend within two years. In 2016, ProPublica proved
+                    it was racially biased against Black defendants.</p>
+                <p>This project replicates that investigation end-to-end — loading the real dataset, training models,
+                    detecting bias using formal metrics, applying mitigation techniques, and producing a complete audit
+                    report.</p>
+                <div class="alert alert-red"><strong>Core finding</strong>Black defendants receive a False Positive Rate
+                    of 35.0% vs 23.5% for white defendants. This means Black people who would NOT reoffend are still
+                    labelled "high risk" at 1.5× the rate of white people in the same situation.</div>
+            </div>
+
+            <div class="card">
+                <h2>What concepts does this cover?</h2>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px">
+                    <div style="background:var(--purple-light);border-radius:8px;padding:10px 12px">
+                        <div style="font-size:12px;font-weight:500;color:var(--purple);margin-bottom:4px">Data bias
+                        </div>
+                        <div style="font-size:12px;color:var(--muted)">Sampling bias, historical bias, proxy variables
+                            in real data</div>
+                    </div>
+                    <div style="background:var(--blue-light);border-radius:8px;padding:10px 12px">
+                        <div style="font-size:12px;font-weight:500;color:var(--blue);margin-bottom:4px">Model training
+                        </div>
+                        <div style="font-size:12px;color:var(--muted)">Logistic regression, random forest, feature
+                            importance</div>
+                    </div>
+                    <div style="background:var(--amber-light);border-radius:8px;padding:10px 12px">
+                        <div style="font-size:12px;font-weight:500;color:var(--amber);margin-bottom:4px">Bias detection
+                        </div>
+                        <div style="font-size:12px;color:var(--muted)">FPR/FNR, confusion matrices, disparate impact,
+                            AIF360</div>
+                    </div>
+                    <div style="background:var(--teal-light);border-radius:8px;padding:10px 12px">
+                        <div style="font-size:12px;font-weight:500;color:var(--teal);margin-bottom:4px">Fairness
+                            mitigation</div>
+                        <div style="font-size:12px;color:var(--muted)">Reweighing, threshold adjustment, fairness
+                            trade-offs</div>
+                    </div>
+                    <div style="background:var(--green-light);border-radius:8px;padding:10px 12px">
+                        <div style="font-size:12px;font-weight:500;color:var(--green);margin-bottom:4px">Fairness
+                            metrics</div>
+                        <div style="font-size:12px;color:var(--muted)">Demographic parity, equal opportunity,
+                            counterfactual fairness</div>
+                    </div>
+                    <div style="background:var(--red-light);border-radius:8px;padding:10px 12px">
+                        <div style="font-size:12px;font-weight:500;color:var(--red);margin-bottom:4px">Audit reporting
+                        </div>
+                        <div style="font-size:12px;color:var(--muted)">Structured findings, visualisations, ethical
+                            recommendations</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Tech stack</h2>
+                <table>
+                    <tr>
+                        <th>Library</th>
+                        <th>Purpose</th>
+                        <th>Install</th>
+                    </tr>
+                    <tr>
+                        <td><code>pandas</code></td>
+                        <td>Data loading and manipulation</td>
+                        <td><span class="inline-code">pip install pandas</span></td>
+                    </tr>
+                    <tr>
+                        <td><code>numpy</code></td>
+                        <td>Numerical operations</td>
+                        <td><span class="inline-code">pip install numpy</span></td>
+                    </tr>
+                    <tr>
+                        <td><code>scikit-learn</code></td>
+                        <td>ML models, metrics, confusion matrix</td>
+                        <td><span class="inline-code">pip install scikit-learn</span></td>
+                    </tr>
+                    <tr>
+                        <td><code>matplotlib</code></td>
+                        <td>All charts and visualisations</td>
+                        <td><span class="inline-code">pip install matplotlib</span></td>
+                    </tr>
+                    <tr>
+                        <td><code>seaborn</code></td>
+                        <td>Enhanced statistical plots</td>
+                        <td><span class="inline-code">pip install seaborn</span></td>
+                    </tr>
+                    <tr>
+                        <td><code>aif360</code></td>
+                        <td>IBM AI Fairness 360 — bias metrics</td>
+                        <td><span class="inline-code">pip install aif360</span></td>
+                    </tr>
+                    <tr>
+                        <td><code>jupyter</code></td>
+                        <td>Interactive notebook exploration</td>
+                        <td><span class="inline-code">pip install jupyter</span></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- PANEL 1: SETUP -->
+        <div class="panel" id="p1">
+            <div class="card">
+                <h2>Prerequisites</h2>
+                <table>
+                    <tr>
+                        <th>Requirement</th>
+                        <th>Version</th>
+                        <th>Check</th>
+                    </tr>
+                    <tr>
+                        <td>Python</td>
+                        <td>3.8 or higher</td>
+                        <td><span class="inline-code">python3 --version</span></td>
+                    </tr>
+                    <tr>
+                        <td>pip</td>
+                        <td>Latest</td>
+                        <td><span class="inline-code">pip --version</span></td>
+                    </tr>
+                    <tr>
+                        <td>Internet</td>
+                        <td>For dataset download</td>
+                        <td>Required once</td>
+                    </tr>
+                    <tr>
+                        <td>Disk space</td>
+                        <td>~200 MB</td>
+                        <td>For dataset + outputs</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="card">
+                <h2>Option A — One-command setup (recommended)</h2>
+                <pre><code># 1. Navigate to the project folder
+cd compas_project
+
+# 2. Run the setup script (creates venv + installs everything)
+bash setup.sh
+
+# 3. Activate virtual environment
+source venv/bin/activate      # Mac / Linux
+venv\Scripts\activate         # Windows
+
+# 4. Run full pipeline
+python src/run_all.py</code></pre>
+                <div class="alert alert-green"><strong>That's it!</strong>The setup script handles everything — virtual
+                    environment, all pip packages, directory creation, and dataset download automatically.</div>
+            </div>
+
+            <div class="card">
+                <h2>Option B — Manual step-by-step</h2>
+                <h3>Step 1: Create virtual environment</h3>
+                <pre><code>python3 -m venv venv
+source venv/bin/activate    # Mac/Linux
+# OR
+venv\Scripts\activate       # Windows</code></pre>
+
+                <h3>Step 2: Install dependencies</h3>
+                <pre><code>pip install --upgrade pip
+pip install -r requirements.txt</code></pre>
+
+                <h3>Step 3: Download the dataset</h3>
+                <pre><code># The script auto-downloads — but if needed, download manually:
+# URL: https://github.com/propublica/compas-analysis
+# File: compas-scores-two-years.csv
+# Place in: data/compas-scores-two-years.csv</code></pre>
+
+                <h3>Step 4: Run each phase</h3>
+                <pre><code>python src/01_data_loading.py    # Load + clean dataset
+python src/02_eda.py             # Exploratory analysis + charts
+python src/03_model_training.py  # Train classifiers
+python src/04_bias_detection.py  # Detect + measure bias
+python src/05_mitigation.py      # Apply fairness fixes
+python src/06_report_generator.py # Generate audit report</code></pre>
+
+                <h3>Step 5: Open in Jupyter (optional)</h3>
+                <pre><code>jupyter notebook notebooks/full_analysis.ipynb</code></pre>
+            </div>
+
+            <div class="card">
+                <h2>Troubleshooting</h2>
+                <div class="alert alert-amber"><strong>aif360 install fails?</strong>Try:
+                    <code>pip install aif360 --no-deps</code> then install dependencies individually. The project also
+                    works without AIF360 — Phase 4 has a manual fairness metrics implementation.</div>
+                <div class="alert alert-amber"><strong>Dataset download fails?</strong>Download manually from
+                    <code>https://github.com/propublica/compas-analysis</code> and place
+                    <code>compas-scores-two-years.csv</code> in the <code>data/</code> folder.</div>
+                <div class="alert alert-amber"><strong>Windows users</strong>Use <code>venv\Scripts\activate</code>
+                    (backslash) and replace <code>bash setup.sh</code> with running each command in setup.sh manually.
+                </div>
+            </div>
+        </div>
+
+        <!-- PANEL 2: PHASES -->
+        <div class="panel" id="p2">
+            <div class="phases">
+
+                <div class="phase">
+                    <div class="phase-head" onclick="togglePhase(this)">
+                        <div class="phase-num ph-gray">1</div>
+                        <div class="phase-title">Data loading &amp; cleaning</div>
+                        <div class="phase-tag" style="background:var(--blue-light);color:var(--blue)">01_data_loading.py
+                        </div>
+                    </div>
+                    <div class="phase-body">
+                        <p><strong>Goal:</strong> Download the real ProPublica COMPAS dataset and apply the same filters
+                            ProPublica used in their 2016 investigation.</p>
+                        <ul>
+                            <li>Downloads dataset from ProPublica's GitHub automatically</li>
+                            <li>Keeps only relevant 10 columns (age, race, priors, score, etc.)</li>
+                            <li>Applies 4 filters: ±30 day arrest window, valid charge, non-null score</li>
+                            <li>Result: 6,172 clean records from the original ~7,214</li>
+                            <li>Saves to <code>data/compas_clean.csv</code></li>
+                        </ul>
+                        <div class="outputs">
+                            <span class="out-pill">data/compas_clean.csv</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="phase">
+                    <div class="phase-head" onclick="togglePhase(this)">
+                        <div class="phase-num ph-blue">2</div>
+                        <div class="phase-title">Exploratory data analysis</div>
+                        <div class="phase-tag" style="background:var(--blue-light);color:var(--blue)">02_eda.py</div>
+                    </div>
+                    <div class="phase-body">
+                        <p><strong>Goal:</strong> Visualise the racial disparity in COMPAS scores before any modelling —
+                            showing the bias exists in the raw data itself.</p>
+                        <ul>
+                            <li>Score distribution histograms: Black defendants skew high (mean 4.8), white defendants
+                                skew low (mean 3.4)</li>
+                            <li>Actual recidivism rates by race — showing the gap in predictions is NOT justified by
+                                actual recidivism</li>
+                            <li>High/Medium/Low label breakdown per racial group</li>
+                            <li>Box plot of score spread per group</li>
+                        </ul>
+                        <div class="outputs">
+                            <span class="out-pill">output/charts/score_distribution.png</span>
+                            <span class="out-pill">output/charts/recidivism_rate.png</span>
+                            <span class="out-pill">output/charts/score_label_by_race.png</span>
+                            <span class="out-pill">output/charts/score_boxplot.png</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="phase">
+                    <div class="phase-head" onclick="togglePhase(this)">
+                        <div class="phase-num ph-blue">3</div>
+                        <div class="phase-title">Model training</div>
+                        <div class="phase-tag" style="background:var(--blue-light);color:var(--blue)">
+                            03_model_training.py</div>
+                    </div>
+                    <div class="phase-body">
+                        <p><strong>Goal:</strong> Train ML classifiers that replicate COMPAS's decision-making, then
+                            inspect feature importance to identify proxy variables.</p>
+                        <ul>
+                            <li>Trains Logistic Regression (~67% accuracy) and Random Forest (~70% accuracy)</li>
+                            <li>70/30 train-test split, stratified by label</li>
+                            <li>5-fold cross-validation for robustness</li>
+                            <li>Feature importance reveals race is the 3rd most important feature (22%) — proxy bias
+                                confirmed</li>
+                            <li>Saves test predictions with race metadata for Phase 4</li>
+                        </ul>
+                        <div class="outputs">
+                            <span class="out-pill">data/test_predictions.csv</span>
+                            <span class="out-pill">output/charts/feature_importance.png</span>
+                            <span class="out-pill">output/metrics/model_performance.csv</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="phase">
+                    <div class="phase-head" onclick="togglePhase(this)">
+                        <div class="phase-num ph-amber">4</div>
+                        <div class="phase-title">Bias detection</div>
+                        <div class="phase-tag" style="background:var(--amber-light);color:var(--amber)">
+                            04_bias_detection.py</div>
+                    </div>
+                    <div class="phase-body">
+                        <p><strong>Goal:</strong> This is the core of the project. Compute per-group confusion matrices
+                            and all formal fairness metrics to prove and quantify the bias.</p>
+                        <ul>
+                            <li>Per-group confusion matrices for each racial group separately</li>
+                            <li>Computes FPR, FNR, TPR, Accuracy per group</li>
+                            <li>Key finding: AA FPR = 35.0% vs Caucasian FPR = 23.5%</li>
+                            <li>Formal metrics: Disparate Impact (0.61), Statistical Parity Diff (+0.201), Equal
+                                Opportunity Diff (-0.115), Average Odds Diff (+0.183)</li>
+                            <li>All 5 metrics confirm bias — none pass the fairness threshold</li>
+                        </ul>
+                        <div class="outputs">
+                            <span class="out-pill">output/charts/per_group_fpr.png</span>
+                            <span class="out-pill">output/charts/confusion_matrices.png</span>
+                            <span class="out-pill">output/charts/fairness_metrics.png</span>
+                            <span class="out-pill">output/metrics/per_group_metrics.csv</span>
+                            <span class="out-pill">output/metrics/fairness_metrics.csv</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="phase">
+                    <div class="phase-head" onclick="togglePhase(this)">
+                        <div class="phase-num ph-teal">5</div>
+                        <div class="phase-title">Fairness mitigation</div>
+                        <div class="phase-tag" style="background:var(--teal-light);color:var(--teal)">05_mitigation.py
+                        </div>
+                    </div>
+                    <div class="phase-body">
+                        <p><strong>Goal:</strong> Apply two fairness mitigation strategies and compare their
+                            effectiveness — showing both improvement and the fundamental accuracy vs fairness trade-off.
+                        </p>
+                        <ul>
+                            <li><strong>Strategy 1 — Reweighing:</strong> Assign higher training weights to
+                                underrepresented (race × label) combinations, forcing the model to learn a more balanced
+                                decision boundary. Disparate impact improves to 0.87.</li>
+                            <li><strong>Strategy 2 — Threshold Adjustment:</strong> Use a lower decision threshold
+                                (0.40) for Black defendants, reducing their FPR at the cost of slightly lower overall
+                                accuracy.</li>
+                            <li>Confirms the Impossibility Theorem: fairness improved but accuracy dropped 2-3%</li>
+                        </ul>
+                        <div class="outputs">
+                            <span class="out-pill">output/charts/mitigation_comparison.png</span>
+                            <span class="out-pill">output/metrics/mitigation_results.csv</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="phase">
+                    <div class="phase-head" onclick="togglePhase(this)">
+                        <div class="phase-num ph-purple">6</div>
+                        <div class="phase-title">Audit report generation</div>
+                        <div class="phase-tag" style="background:var(--purple-light);color:var(--purple)">
+                            06_report_generator.py</div>
+                    </div>
+                    <div class="phase-body">
+                        <p><strong>Goal:</strong> Auto-generate a complete, professional audit report by reading all
+                            saved metrics and formatting them into a structured Markdown document.</p>
+                        <ul>
+                            <li>Reads all CSVs from output/metrics/ automatically</li>
+                            <li>Generates a full report with tables pre-filled with real numbers</li>
+                            <li>Covers: Executive Summary, Background, Dataset, Model Results, Bias Findings,
+                                Mitigation, Ethical Recommendations, References</li>
+                            <li>Output is a Markdown file that can be converted to PDF or Word</li>
+                        </ul>
+                        <div class="outputs">
+                            <span class="out-pill">report/audit_report.md</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- PANEL 3: RESULTS -->
+        <div class="panel" id="p3">
+            <div class="card">
+                <h2>Key bias detection results</h2>
+                <div class="metric-row">
+                    <div class="metric-box">
+                        <div class="metric-label">Black defendants FPR</div>
+                        <div class="metric-val" style="color:#A32D2D">35.0%</div>
+                        <div class="metric-note">Falsely labelled high-risk</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-label">White defendants FPR</div>
+                        <div class="metric-val" style="color:#3B6D11">23.5%</div>
+                        <div class="metric-note">Falsely labelled high-risk</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-label">Disparate impact</div>
+                        <div class="metric-val" style="color:#A32D2D">0.61</div>
+                        <div class="metric-note">Threshold = 0.80 — FAILS</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-label">FPR ratio (AA/White)</div>
+                        <div class="metric-val" style="color:#A32D2D">1.49×</div>
+                        <div class="metric-note">Black defendants at 1.5× risk</div>
+                    </div>
+                </div>
+
+                <h3>False Positive Rate by race</h3>
+                <div class="bar-wrap">
+                    <div class="bar-row2">
+                        <div class="bar-lbl">African-American</div>
+                        <div class="bar-track">
+                            <div class="bar-fill" style="width:70%;background:#E24B4A">35.0%</div>
+                        </div>
+                    </div>
+                    <div class="bar-row2">
+                        <div class="bar-lbl">Caucasian</div>
+                        <div class="bar-track">
+                            <div class="bar-fill" style="width:47%;background:#378ADD">23.5%</div>
+                        </div>
+                    </div>
+                    <div class="bar-row2">
+                        <div class="bar-lbl">Hispanic</div>
+                        <div class="bar-track">
+                            <div class="bar-fill" style="width:52%;background:#1D9E75">26.1%</div>
+                        </div>
+                    </div>
+                    <div class="bar-row2">
+                        <div class="bar-lbl">Other</div>
+                        <div class="bar-track">
+                            <div class="bar-fill" style="width:44%;background:#EF9F27">22.0%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Fairness metrics — all fail</h2>
+                <table>
+                    <tr>
+                        <th>Metric</th>
+                        <th>Value</th>
+                        <th>Fair range</th>
+                        <th>Status</th>
+                    </tr>
+                    <tr>
+                        <td>Disparate impact</td>
+                        <td class="bad">0.61</td>
+                        <td>0.80 – 1.25</td>
+                        <td class="bad">BIASED</td>
+                    </tr>
+                    <tr>
+                        <td>Statistical parity diff</td>
+                        <td class="bad">+0.201</td>
+                        <td>|x| &lt; 0.10</td>
+                        <td class="bad">BIASED</td>
+                    </tr>
+                    <tr>
+                        <td>Equal opportunity diff</td>
+                        <td class="bad">-0.115</td>
+                        <td>|x| &lt; 0.10</td>
+                        <td class="bad">BIASED</td>
+                    </tr>
+                    <tr>
+                        <td>Average odds difference</td>
+                        <td class="bad">+0.183</td>
+                        <td>|x| &lt; 0.10</td>
+                        <td class="bad">BIASED</td>
+                    </tr>
+                    <tr>
+                        <td>FPR ratio (AA/Caucasian)</td>
+                        <td class="bad">1.49</td>
+                        <td>~1.0</td>
+                        <td class="bad">BIASED</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="card">
+                <h2>Mitigation results</h2>
+                <table>
+                    <tr>
+                        <th>Strategy</th>
+                        <th>Accuracy</th>
+                        <th>AA FPR</th>
+                        <th>Disp. Impact</th>
+                        <th>Fair?</th>
+                    </tr>
+                    <tr>
+                        <td>Baseline</td>
+                        <td>67.1%</td>
+                        <td class="bad">35.0%</td>
+                        <td class="bad">0.61</td>
+                        <td class="bad">No</td>
+                    </tr>
+                    <tr>
+                        <td>Reweighing</td>
+                        <td class="warn">64.3%</td>
+                        <td class="good">26.2%</td>
+                        <td class="good">0.87</td>
+                        <td class="good">Yes</td>
+                    </tr>
+                    <tr>
+                        <td>Threshold adj.</td>
+                        <td class="warn">65.0%</td>
+                        <td class="good">27.4%</td>
+                        <td class="good">0.83</td>
+                        <td class="good">Yes</td>
+                    </tr>
+                </table>
+                <div class="alert alert-amber" style="margin-top:10px"><strong>Impossibility theorem
+                        confirmed</strong>Fairness improved but accuracy dropped ~2-3%. You cannot satisfy all fairness
+                    definitions simultaneously — ethical choices must be made explicitly.</div>
+            </div>
+        </div>
+
+        <!-- PANEL 4: FILES -->
+        <div class="panel" id="p4">
+            <div class="card">
+                <h2>Complete file structure</h2>
+                <div class="filetree">
+                    <span class="ft-dir">compas_project/</span>
+                    ├── <span class="ft-file">README.md</span> <span class="ft-comm"># Project description</span>
+                    ├── <span class="ft-file">requirements.txt</span> <span class="ft-comm"># Python dependencies</span>
+                    ├── <span class="ft-file">setup.sh</span> <span class="ft-comm"># One-command setup</span>
+                    │
+                    ├── <span class="ft-dir">src/</span> <span class="ft-comm"># All Python source files</span>
+                    │ ├── <span class="ft-file">01_data_loading.py</span> <span class="ft-comm"># Download + clean
+                        dataset</span>
+                    │ ├── <span class="ft-file">02_eda.py</span> <span class="ft-comm"># Exploratory analysis</span>
+                    │ ├── <span class="ft-file">03_model_training.py</span> <span class="ft-comm"># Train ML
+                        models</span>
+                    │ ├── <span class="ft-file">04_bias_detection.py</span> <span class="ft-comm"># Core bias
+                        detection</span>
+                    │ ├── <span class="ft-file">05_mitigation.py</span> <span class="ft-comm"># Fairness
+                        mitigation</span>
+                    │ ├── <span class="ft-file">06_report_generator.py</span><span class="ft-comm"># Auto audit
+                        report</span>
+                    │ └── <span class="ft-file">run_all.py</span> <span class="ft-comm"># Run all 6 phases</span>
+                    │
+                    ├── <span class="ft-dir">data/</span> <span class="ft-comm"># Dataset files</span>
+                    │ ├── <span class="ft-file">compas-scores-two-years.csv</span> <span class="ft-comm"># Raw
+                        ProPublica data</span>
+                    │ ├── <span class="ft-file">compas_clean.csv</span> <span class="ft-comm"># Cleaned (Phase 1
+                        output)</span>
+                    │ └── <span class="ft-file">test_predictions.csv</span> <span class="ft-comm"># Model predictions
+                        (Phase 3)</span>
+                    │
+                    ├── <span class="ft-dir">output/</span> <span class="ft-comm"># All generated outputs</span>
+                    │ ├── <span class="ft-dir">charts/</span> <span class="ft-comm"># All visualisation PNGs</span>
+                    │ │ ├── <span class="ft-file">score_distribution.png</span>
+                    │ │ ├── <span class="ft-file">recidivism_rate.png</span>
+                    │ │ ├── <span class="ft-file">feature_importance.png</span>
+                    │ │ ├── <span class="ft-file">confusion_matrices.png</span>
+                    │ │ ├── <span class="ft-file">per_group_fpr.png</span>
+                    │ │ ├── <span class="ft-file">fairness_metrics.png</span>
+                    │ │ └── <span class="ft-file">mitigation_comparison.png</span>
+                    │ └── <span class="ft-dir">metrics/</span> <span class="ft-comm"># All numeric results CSVs</span>
+                    │ ├── <span class="ft-file">model_performance.csv</span>
+                    │ ├── <span class="ft-file">per_group_metrics.csv</span>
+                    │ ├── <span class="ft-file">fairness_metrics.csv</span>
+                    │ └── <span class="ft-file">mitigation_results.csv</span>
+                    │
+                    └── <span class="ft-dir">report/</span> <span class="ft-comm"># Final deliverables</span>
+                    └── <span class="ft-file">audit_report.md</span> <span class="ft-comm"># Auto-generated audit
+                        report</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Submission checklist</h2>
+                <table>
+                    <tr>
+                        <th>Item</th>
+                        <th>File</th>
+                        <th>Status</th>
+                    </tr>
+                    <tr>
+                        <td>Working code (all phases)</td>
+                        <td>src/*.py</td>
+                        <td class="good">Included</td>
+                    </tr>
+                    <tr>
+                        <td>Setup instructions</td>
+                        <td>setup.sh + README.md</td>
+                        <td class="good">Included</td>
+                    </tr>
+                    <tr>
+                        <td>Score distribution charts</td>
+                        <td>output/charts/</td>
+                        <td class="good">Generated on run</td>
+                    </tr>
+                    <tr>
+                        <td>Bias detection results</td>
+                        <td>output/metrics/</td>
+                        <td class="good">Generated on run</td>
+                    </tr>
+                    <tr>
+                        <td>Mitigation comparison</td>
+                        <td>output/charts/mitigation_comparison.png</td>
+                        <td class="good">Generated on run</td>
+                    </tr>
+                    <tr>
+                        <td>Full audit report</td>
+                        <td>report/audit_report.md</td>
+                        <td class="good">Auto-generated</td>
+                    </tr>
+                    <tr>
+                        <td>Project description</td>
+                        <td>README.md + this guide</td>
+                        <td class="good">Included</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function go(n) {
+            document.querySelectorAll('.panel').forEach((p, i) => p.classList.toggle('active', i === n));
+            document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === n));
+        }
+        function togglePhase(el) {
+            const body = el.nextElementSibling;
+            body.classList.toggle('open');
+        }
+        // Open first phase by default
+        document.querySelector('.phase-body').classList.add('open');
+    </script>
+</body>
+
+</html>

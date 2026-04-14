@@ -1,0 +1,4 @@
+strategy,accuracy,AA_FPR,CA_FPR,DI
+Baseline,0.686,0.324,0.17,2.143
+Reweighing,0.646,0.387,0.279,1.499
+Threshold Adj.,0.673,0.557,0.17,2.924
