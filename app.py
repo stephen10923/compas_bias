@@ -166,7 +166,7 @@ def get_report():
 @app.get("/explain")
 def explain_bias():
     """Use Google Gemini AI to explain bias findings in plain English."""
-    gemini_key = os.environ.get("GEMINI_API_KEY")
+    gemini_key = os.environ.get("AIzaSyAEc4kha2TdjMqD7JsnaXuAdtU3jMUsGuM")
     if not gemini_key:
         return JSONResponse(
             status_code=400,
@@ -176,7 +176,7 @@ def explain_bias():
     try:
         import google.generativeai as genai
         genai.configure(api_key=gemini_key)
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        model = genai.GenerativeModel("gemini-2.5-flash")
 
         # Load metrics
         fairness  = pd.read_csv("output/metrics/fairness_metrics.csv").to_dict(orient="records")[0]

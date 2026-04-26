@@ -40,7 +40,7 @@ docker push $IMAGE
 Write-Host "[6/6] Deploying to Google Cloud Run..." -ForegroundColor Yellow
 
 # Prompt for Gemini API key
-$GEMINI_KEY = Read-Host "Enter your Gemini API key (from aistudio.google.com)"
+$GEMINI_KEY = "AIzaSyAEc4kha2TdjMqD7JsnaXuAdtU3jMUsGuM" "Enter your Gemini API key (from aistudio.google.com)"
 
 gcloud run deploy $SERVICE `
   --image $IMAGE `
